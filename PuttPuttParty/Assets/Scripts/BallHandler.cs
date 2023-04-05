@@ -8,44 +8,54 @@ public class BallHandler : MonoBehaviour
 {
     public float maxPower;
     public float changeAngleSpeed;
-    public float lineLength;
+    public float aimLength;
+    public float minHoleTime;
     public Slider powerBar;
     public TextMeshProUGUI puttCountLabel;
 
-    private LineRenderer line;
+    private LineRenderer aim;
     private Rigidbody ball;
     private float angle;
     private float powerUpTime;
     private float power;
-    private int putts;
+    private int numPutts;
+    private float holeTime;
+    private Vector3 lastPosition;
 
     private void Awake()
     {
         ball = GetComponent<Rigidbody>();
         ball.maxAngularVelocity = 1000;
 
-        line = GetComponent<LineRenderer>();
+        aim = GetComponent<LineRenderer>();
     }
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.A))
+        if (ball.velocity.magnitude < 0.01f)
         {
-            ChangeAngle(-1);
+            if (Input.GetKey(KeyCode.A))
+            {
+                ChangeAngle(-1);
+            }
+            if (Input.GetKey(KeyCode.D))
+            {
+                ChangeAngle(1);
+            }
+            if (Input.GetKeyUp(KeyCode.Space))
+            {
+                PuttPutt();
+            }
+            if (Input.GetKey(KeyCode.Space))
+            {
+                PowerUp();
+            }
+            UpdateLinePositions();
         }
-        if (Input.GetKey(KeyCode.D))
+        else
         {
-            ChangeAngle(1);
+            aim.enabled = false;
         }
-        if (Input.GetKeyUp(KeyCode.Space))
-        {
-            PuttPutt();
-        }
-        if (Input.GetKey(KeyCode.Space))
-        {
-            PowerUp();
-        }
-        UpdateLinePositions();
     }
 
     private void ChangeAngle(int direction)
@@ -55,18 +65,24 @@ public class BallHandler : MonoBehaviour
 
     private void UpdateLinePositions()
     {
-        line.SetPosition(0, transform.position);
-        line.SetPosition(1, transform.position + Quaternion.Euler(0, angle, 0) * Vector3.forward * lineLength);
+        if (holeTime == 0) 
+        { 
+            aim.enabled = true; 
+        }
+
+        aim.SetPosition(0, transform.position);
+        aim.SetPosition(1, transform.position + Quaternion.Euler(0, angle, 0) * Vector3.forward * aimLength);
     }
 
     private void PuttPutt()
     {
+        lastPosition = transform.position;
         ball.AddForce(Quaternion.Euler(0, angle, 0) * Vector3.forward * maxPower * power, ForceMode.Impulse);
         power = 0;
         powerBar.value = 0;
         powerUpTime = 0;
-        putts++;
-        puttCountLabel.text = putts.ToString();
+        numPutts++;
+        puttCountLabel.text = numPutts.ToString();
     }
 
     private void PowerUp()
@@ -75,4 +91,49 @@ public class BallHandler : MonoBehaviour
         power = Mathf.PingPong(powerUpTime, 1);
         powerBar.value = power;
     }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.tag == "Hole")
+        {
+            CountHoleTime();
+        }
+    }
+
+
+    private void CountHoleTime()
+    {
+        holeTime += Time.deltaTime;
+
+        if (holeTime >= minHoleTime)
+        {
+            Debug.Log("It took " + numPutts + " putts to make the hole!");
+            holeTime = 0;
+        }
+    }
+
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.tag == "Hole")
+        {
+            MissHole();
+        }
+    }
+
+    private void MissHole()
+    {
+        holeTime = 0;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.collider.tag == "OOB")
+        {
+            transform.position = lastPosition;
+            ball.velocity = Vector3.zero;
+            ball.angularVelocity = Vector3.zero;
+        }
+    }
+
 }
