@@ -38,7 +38,7 @@ public class LevelManager : MonoBehaviour
         {
             if (playerRecord.levelIndex == playerRecord.levels.Length - 1)
             {
-                Debug.Log("Scoreboard");
+                SceneManager.LoadScene("Scoreboard");
             }
             else
             {

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class PlayerRecords : MonoBehaviour
 {
@@ -25,12 +26,24 @@ public class PlayerRecords : MonoBehaviour
         playerList[playerIndex].putts[levelIndex] = puttCount;
     }
 
+    public List<Player> GetScoreboardList()
+    {
+        foreach (var player in playerList)
+        {
+            foreach (var puttScore in player.putts) 
+            {
+                player.totalPutts += puttScore;
+            }
+        }
+        return (from p in playerList orderby p.totalPutts select p).ToList();
+    }
     public class Player
     {
 
         public string name;
         public Color color;
         public int[] putts;
+        public int totalPutts;
 
         public Player(string newName, Color newColor, int levelCount)
         {
