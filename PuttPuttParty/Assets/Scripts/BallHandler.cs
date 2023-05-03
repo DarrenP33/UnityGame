@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 public class BallHandler : MonoBehaviour
 {
+    public AudioClip puttMake, puttHit;
     public float maxPower;
     public float changeAngleSpeed;
     public float aimLength;
@@ -23,9 +24,11 @@ public class BallHandler : MonoBehaviour
     private int numPutts;
     private float holeTime;
     private Vector3 lastPosition;
+    private AudioSource audioSource;
 
     private void Awake()
     {
+        audioSource = GetComponent<AudioSource>();
         ball = GetComponent<Rigidbody>();
         ball.maxAngularVelocity = 1000;
         aim = GetComponent<LineRenderer>();
@@ -78,6 +81,7 @@ public class BallHandler : MonoBehaviour
 
     private void PuttPutt()
     {
+        audioSource.PlayOneShot(puttHit);
         lastPosition = transform.position;
         ball.AddForce(Quaternion.Euler(0, angle, 0) * Vector3.forward * maxPower * power, ForceMode.Impulse);
         power = 0;
@@ -99,6 +103,14 @@ public class BallHandler : MonoBehaviour
         if (other.tag == "Hole")
         {
             CountHoleTime();
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "Hole")
+        {
+            audioSource.PlayOneShot(puttMake);
         }
     }
 
